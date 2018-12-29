@@ -1,0 +1,11 @@
+Package: mcb
+Type: Package
+Title: Choose the best variable selection method by MCB
+Version: 0.1.1
+Author: RUC school of statistics
+Maintainer: RUC<ruc@ruc.edu.cn>
+Description: mcb 
+License: GPL
+Encoding: UTF-8
+LazyData: true
+Depends:parallel,methods,leaps,lars,MASS,glmnet,ncvreg,parcor,flare,smoothmest,ggplot2,reshape2
