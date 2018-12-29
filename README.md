@@ -23,7 +23,8 @@
 >`mucplot` plot of the model uncertainty curve for this specific user-chosen variable selectionmethod.  
 >`mcbframe` a dataframe containing all the information about MCBs for the specific variable selectionmethod under all bootstrap coverage rates including width(w), lower confidence bound(lcb) and upper confidence bound(ucb) for each bootstrap coverage rate(bcr)  
 
-*Examples*
+*Examples*  
+>```library(mcb) # load data```
 >```data(Diabetes) # load data```  
 >```x <- Diabetes[,c('S1', 'S2', 'S3', 'S4', 'S5')]```  
 >```y <- Diabetes[,c('Y')]```  
@@ -31,9 +32,25 @@
 >```y <- data.matrix(y)```  
 >```result <- mcb(x=x, y=y)```  
 >```result$mucplot # plot of the model uncertainty curve```  
+>  ![](https://github.com/Heming0425/Model_Confidence_Bound/blob/master/example/mucplot1.jpeg)
+>  
 >```result$mcb # a list containing the bootstrap coverage rate and mcb```  
+>```$lbm```  
+>```[1] "x5"```  
+>```$ubm```  
+>```[1] "x5" "x3" "x4" "x1" "x2"```  
+>```$bcr```  
+>```[1] 1```  
+>  
 >```result$mcbframe # a dataframe containing all the information about MCBs```  
-
+>```  width                lbm   bcr                ubm```  
+>```1     0 x5, x3, x4, x1, x2 0.335 x5, x3, x4, x1, x2```  
+>```2     1     x5, x3, x4, x1 0.375 x5, x3, x4, x1, x2```  
+>```3     2         x5, x3, x4 0.505 x5, x3, x4, x1, x2```  
+>```4     3             x5, x3 0.830 x5, x3, x4, x1, x2```  
+>```5     4                 x5 1.000 x5, x3, x4, x1, x2```  
+>```6     5                    1.000 x5, x3, x4, x1, x2```  
+  
 ---
 
 ### Comparisons of Model Confidence Bounds for Different Variable selection Methods
@@ -51,5 +68,21 @@
 >```y <- data.matrix(y)```  
 >```result <- mcb.compare(x=x, y=y)```  
 >```result$mucplot # plot of the model uncertainty curves for all variable selection methods```  
+>  
 >```result$mcb$Lasso # a list containing the bootstrap coverage rate and mcb which based on Lasso```  
+>```$lbm```  
+>```[1] "x5"```  
+>```$ubm```  
+>```[1] "x5" "x3" "x4" "x1" "x2"```  
+>```$bcr```  
+>```[1] 1```  
+>  
 >```result$mcbframe$Lasso # a dataframe containing all the information about MCBs which based on Lasso```  
+>```  width                lbm   bcr                ubm```  
+>```1     0 x5, x3, x4, x1, x2 0.335 x5, x3, x4, x1, x2```  
+>```2     1     x5, x3, x4, x1 0.375 x5, x3, x4, x1, x2```  
+>```3     2         x5, x3, x4 0.505 x5, x3, x4, x1, x2```  
+>```4     3             x5, x3 0.830 x5, x3, x4, x1, x2```  
+>```5     4                 x5 1.000 x5, x3, x4, x1, x2```  
+>```6     5                    1.000 x5, x3, x4, x1, x2```  
+  
