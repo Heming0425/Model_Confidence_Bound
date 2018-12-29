@@ -66,7 +66,7 @@
 >`methods` a vector including all variable selection methods the user wants to test and compare. The default value is c ('aLasso', 'Lasso', 'SCAD', 'MCP', 'stepwise', 'LAD', 'SQRT')  
   
 *Values*
->`mcb` a list containing the bootstrap coverage rate and the corresponding model confidence bound for all user-given variable selection methods.
+>`mcb` a list containing the bootstrap coverage rate and the corresponding model confidence bound for all user-given variable selection methods.  
 >`mucplot` plot of the model uncertainty curves for all variable selection methods and could be used to choose the best method.  
 >`mcbframe` a list containing all the information about MCBs for all variable selection methods under all available bootstrap coverage rates.  
   
@@ -78,6 +78,7 @@
 >```y <- data.matrix(y)```  
 >```result <- mcb.compare(x=x, y=y)```  
 >```result$mucplot # plot of the model uncertainty curves for all variable selection methods```  
+>  ![](https://github.com/Heming0425/Model_Confidence_Bound/blob/master/example/plot2.jpeg)  
 >  
 >```result$mcb$Lasso # a list containing the bootstrap coverage rate and mcb which based on Lasso```  
 >```$lbm```  
