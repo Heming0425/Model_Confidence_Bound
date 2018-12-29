@@ -61,7 +61,7 @@
 >```mcb.compare(x, y, B=200, lambdas=NULL, methods=NULL, level=0.95, seed=122)```
   
 *Arguments*  
->`x`,`y` and `seed` is same as `mcb`.  
+>`x`,`y` and `seed` is the same as `mcb`.  
 >`lambdas` a vector of penalty tuning parameters for each variable selection method. The default values are the optimal choices for each selection method computed automatically.  
 >`methods` a vector including all variable selection methods the user wants to test and compare. The default value is c ('aLasso', 'Lasso', 'SCAD', 'MCP', 'stepwise', 'LAD', 'SQRT')  
   
