@@ -13,7 +13,7 @@
 *Arguments*
 >`x` input matrix; each column is an observation vector of certain independent variable, and will be given a name automatically in the order of x1, x2, x3…  
 >`y` y is a matrix of one column which presents the response vector B	number of bootstrap replicates to perform, default value is 200.  
->`lambda` A user supplied lambda value. It is the penalty tuning parameter for the variable selection method tested. The default value is the optimization outcome automatically computed in consideration of the specific case.  
+>`lambda` a user supplied lambda value. It is the penalty tuning parameter for the variable selection method tested. The default value is the optimization outcome automatically computed in consideration of the specific case.  
 >`method` Default value is ‘Lasso; user can choose from 'aLasso', 'Lasso', 'SCAD', 'MCP', 'stepwise', 'LAD', 'SQRT'.  
 >`level` a positive value between 0 and 1, like the concept of confidence level for point estimation; Default value is 0.95.  
 >`seed` seed for bootstrap procedures; Default value is 122.  
@@ -59,6 +59,16 @@
   
 *Usage*
 >```mcb.compare(x, y, B=200, lambdas=NULL, methods=NULL, level=0.95, seed=122)```
+  
+*Arguments*  
+>`x`,`y` and `seed` is same as `mcb`.  
+>`lambdas` a vector of penalty tuning parameters for each variable selection method. The default values are the optimal choices for each selection method computed automatically.  
+>`methods` a vector including all variable selection methods the user wants to test and compare. The default value is c ('aLasso', 'Lasso', 'SCAD', 'MCP', 'stepwise', 'LAD', 'SQRT')  
+  
+*Values*
+>`mcb` a list containing the bootstrap coverage rate and the corresponding model confidence bound for all user-given variable selection methods.
+>`mucplot` plot of the model uncertainty curves for all variable selection methods and could be used to choose the best method.  
+>`mcbframe` a list containing all the information about MCBs for all variable selection methods under all available bootstrap coverage rates.  
   
 *Examples*
 >```data(Diabetes) # load data```  
