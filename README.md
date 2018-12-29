@@ -32,7 +32,7 @@
 >```y <- data.matrix(y)```  
 >```result <- mcb(x=x, y=y)```  
 >```result$mucplot # plot of the model uncertainty curve```  
->  ![](https://github.com/Heming0425/Model_Confidence_Bound/blob/master/example/mucplot1.jpeg)
+>  ![](https://github.com/Heming0425/Model_Confidence_Bound/blob/master/example/plot1.jpeg)
 >  
 >```result$mcb # a list containing the bootstrap coverage rate and mcb```  
 >```$lbm```  
