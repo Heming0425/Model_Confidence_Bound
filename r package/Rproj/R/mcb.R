@@ -677,7 +677,7 @@ VSCS_capture_true_model <- function(model_matrix, real_model_vector){
 getmcb <- function(result,c){
   n = length(result$freq)
   fit_freq = c(result$freq)[result$freq - c >= 0]
-  best_fit = which.min(fit_freq - c) + n+1 - sum(result$freq - c >= 0)
+  best_fit = which.min(fit_freq - c) + n - sum(result$freq - c >= 0)
   mc = list()
   mc$lbm <- result$lower[[best_fit]]
   mc$ubm <- result$upper[[best_fit]]
@@ -842,6 +842,7 @@ mcb.compare <- function(x, y, B=200, lambdas=NA, methods = NA, level=0.95,seed=1
   #ggplot2绘图
   df <- data.frame(final_result)
   df$x <- seq(0,1,length.out = n+1)
+  df$x <- round(df$x,digits = 3)
   df <- melt(df, id=c('x'))
   df$value <- as.numeric(df$value)
   muc <- ggplot(df, aes(x=x, y=value, color=variable, shape=variable)) + geom_line() + labs(x = "w/p") + labs(y = "freq") + labs(colour = "Method") + ylim(0,1) + scale_x_continuous(breaks = df$x)
@@ -949,6 +950,7 @@ mcb <- function(x, y, B=200, lambda=NA, method = 'Lasso', level=0.95, seed = 122
   df <- data.frame(result$freq)
   # df$x <- c(0,0.2,0.4,0.6,0.8,1.0)
   df$x <- seq(0,1,length.out = n+1)
+  df$x <- round(df$x,digits = 3)
   muc <- ggplot(df, aes(x=x, y=result.freq)) + geom_line() + labs(x = "w/p") + labs(y = "freq") + labs(colour = "Method") + ylim(0,1) + scale_x_continuous(breaks = df$x)
   all_result$mucplot <- muc
 
@@ -961,7 +963,7 @@ mcb <- function(x, y, B=200, lambda=NA, method = 'Lasso', level=0.95, seed = 122
   all_result$mcb <- mcb
 
   mcbframe <- data.frame(lbm = matrix(result$lower), bcr = result$freq, ubm = matrix(result$upper))
-  mcbframe$width <- c(0:(n-1))
+  mcbframe$width <- c(0:n)
   mcbframe <- mcbframe[,c('width','lbm','bcr','ubm')]
   all_result$mcbframe <- mcbframe
 
