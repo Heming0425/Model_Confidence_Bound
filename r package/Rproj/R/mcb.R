@@ -675,8 +675,9 @@ VSCS_capture_true_model <- function(model_matrix, real_model_vector){
 
 
 getmcb <- function(result,c){
+  n = length(result$freq)
   fit_freq = c(result$freq)[result$freq - c >= 0]
-  best_fit = which.min(fit_freq - c) + 6 - sum(result$freq - c >= 0)
+  best_fit = which.min(fit_freq - c) + n+1 - sum(result$freq - c >= 0)
   mc = list()
   mc$lbm <- result$lower[[best_fit]]
   mc$ubm <- result$upper[[best_fit]]
@@ -686,14 +687,21 @@ getmcb <- function(result,c){
 
 getmcbt <- function(result){
   mcbf <- data.frame(lbm = matrix(result$lower), bcr = result$freq, ubm = matrix(result$upper))
-  mcbf$width <- c(0,1,2,3,4,5)
+  n = length(mcbf$lbm)
+  mcbf$width <- c(0:(n-1))
   mcbf <- mcbf[,c('width','lbm','bcr','ubm')]
   return(mcbf)
 }
 
-
+# 主函数
 
 mcb.compare <- function(x, y, B=200, lambdas=NA, methods = NA, level=0.95,seed=122){
+  #var.x 传入可供选择的变量,var.x = c("var1","var2".....)
+  #pred.y 被预测变量y
+  #data 数据集
+  #r bootstrap次数
+  #methods 变量选择方法,methods = c('adalasso', 'lasso', 'SCAD', 'MCP','stepwise','LAD','SQRT'),默认为所有
+  #lmbd 只寻找最近的lmbd
 
   x = as.data.frame(x)
   n = length(x)
@@ -703,7 +711,7 @@ mcb.compare <- function(x, y, B=200, lambdas=NA, methods = NA, level=0.95,seed=1
   }
   y = as.data.frame(y)
 
-
+  #数据变换
   data = cbind(x,y)
   full.var <<- paste(colnames(x),sep="")
   colnames(data)[dim(data)[2]] = "y"
@@ -751,6 +759,7 @@ mcb.compare <- function(x, y, B=200, lambdas=NA, methods = NA, level=0.95,seed=1
     mcbframe$Lasso<-getmcbt(result_Lasso)
   }
 
+  #SCAD与MCP的lmbd默认都是找最小
   #SCAD
   if('SCAD' %in% methods){
     if(lambdas==''){
@@ -777,6 +786,7 @@ mcb.compare <- function(x, y, B=200, lambdas=NA, methods = NA, level=0.95,seed=1
     mcbframe$MCP <- getmcbt(result_MCP)
   }
 
+  #lmbd默认最小
   #stepwise
   if('stepwise' %in% methods){
     if(lambdas==''){
@@ -790,6 +800,7 @@ mcb.compare <- function(x, y, B=200, lambdas=NA, methods = NA, level=0.95,seed=1
     mcbframe$stepwise <- getmcbt(result_stepwise)
   }
 
+  #LAD与SQRT的lmbd默认为最接近1
   #LAD
   if('LAD' %in% methods){
     if(lambdas==''){
@@ -828,9 +839,9 @@ mcb.compare <- function(x, y, B=200, lambdas=NA, methods = NA, level=0.95,seed=1
 
   all_result = list()
 
-  #ggplot2
+  #ggplot2绘图
   df <- data.frame(final_result)
-  df$x <- c(0,0.2,0.4,0.6,0.8,1.0)
+  df$x <- seq(0,1,length.out = n+1)
   df <- melt(df, id=c('x'))
   df$value <- as.numeric(df$value)
   muc <- ggplot(df, aes(x=x, y=value, color=variable, shape=variable)) + geom_line() + labs(x = "w/p") + labs(y = "freq") + labs(colour = "Method") + ylim(0,1) + scale_x_continuous(breaks = df$x)
@@ -842,7 +853,15 @@ mcb.compare <- function(x, y, B=200, lambdas=NA, methods = NA, level=0.95,seed=1
 }
 
 
+####修改完成
 mcb <- function(x, y, B=200, lambda=NA, method = 'Lasso', level=0.95, seed = 122){
+  #var.x 传入可供选择的变量,var.x = c("var1","var2".....)
+  #pred.y 被预测变量y
+  #data 数据集
+  #r bootstrap次数
+  #methods 变量选择方法,methods = c('adalasso', 'lasso', 'SCAD', 'MCP','stepwise','LAD','SQRT'),默认为所有
+  #lmbd 只寻找最近的lmbd
+  #数据变换
 
   x = as.data.frame(x)
   n = length(x)
@@ -885,6 +904,7 @@ mcb <- function(x, y, B=200, lambda=NA, method = 'Lasso', level=0.95, seed = 122
     result <- CI(var_lasso, var_01_lasso, p)
   }
 
+  #SCAD与MCP的lmbd默认都是找最小
   #SCAD
   if(method == 'SCAD'){
     var_SCAD <- RES.BOOT.CI3(data, p + 1, r, pnlt='SCAD',lmbd=lambda,seed=seed)
@@ -899,6 +919,7 @@ mcb <- function(x, y, B=200, lambda=NA, method = 'Lasso', level=0.95, seed = 122
     result <- CI(var_MCP, var_01_MCP, p)
   }
 
+  #lmbd默认最小
   #stepwise
   if(method=='stepwise'){
     var_stepwise <- RES.BOOT.CI5(data, p, r,lmbd=lambda,seed=seed)
@@ -906,6 +927,7 @@ mcb <- function(x, y, B=200, lambda=NA, method = 'Lasso', level=0.95, seed = 122
     result <- CI(var_stepwise, var_01_stepwise, p)
   }
 
+  #LAD与SQRT的lmbd默认为最接近1
   #LAD
   if(method=='LAD'){
     var_LAD <- RES.BOOT.CI4(data, p+1, r, q = 1, lmbd = lambda,seed=seed)
@@ -923,14 +945,15 @@ mcb <- function(x, y, B=200, lambda=NA, method = 'Lasso', level=0.95, seed = 122
 
   all_result <- list()
 
-  #ggplot2
+  #ggplot2绘图
   df <- data.frame(result$freq)
-  df$x <- c(0,0.2,0.4,0.6,0.8,1.0)
+  # df$x <- c(0,0.2,0.4,0.6,0.8,1.0)
+  df$x <- seq(0,1,length.out = n+1)
   muc <- ggplot(df, aes(x=x, y=result.freq)) + geom_line() + labs(x = "w/p") + labs(y = "freq") + labs(colour = "Method") + ylim(0,1) + scale_x_continuous(breaks = df$x)
   all_result$mucplot <- muc
 
   fit_freq = c(result$freq)[result$freq - level >= 0]
-  best_fit = which.min(fit_freq - level) + 6 - sum(result$freq - level >= 0)
+  best_fit = which.min(fit_freq - level) + n+1 - sum(result$freq - level >= 0)
   mcb = list()
   mcb$lbm <- result$lower[[best_fit]]
   mcb$ubm <- result$upper[[best_fit]]
@@ -938,7 +961,7 @@ mcb <- function(x, y, B=200, lambda=NA, method = 'Lasso', level=0.95, seed = 122
   all_result$mcb <- mcb
 
   mcbframe <- data.frame(lbm = matrix(result$lower), bcr = result$freq, ubm = matrix(result$upper))
-  mcbframe$width <- c(0,1,2,3,4,5)
+  mcbframe$width <- c(0:(n-1))
   mcbframe <- mcbframe[,c('width','lbm','bcr','ubm')]
   all_result$mcbframe <- mcbframe
 
