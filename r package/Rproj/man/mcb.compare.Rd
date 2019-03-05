@@ -34,7 +34,7 @@ mcbframe	a list containing all the information about MCBs for all variable selec
 }
 \examples{
 data(Diabetes) # load data
-x <- Diabetes[,c('S1', 'S2', 'S3', 'S4', 'S5')
+x <- Diabetes[,c('S1', 'S2', 'S3', 'S4', 'S5')]
 y <- Diabetes[,c('Y')]
 x <- data.matrix(x)
 y <- data.matrix(y)

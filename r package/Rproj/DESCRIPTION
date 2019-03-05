@@ -1,7 +1,7 @@
 Package: mcb
 Type: Package
 Title: Choose the best variable selection method by MCB
-Version: 0.1.1
+Version: 0.1.2
 Author: RUC school of statistics
 Maintainer: RUC<ruc@ruc.edu.cn>
 Description: mcb 

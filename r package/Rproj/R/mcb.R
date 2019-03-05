@@ -1,3 +1,5 @@
+warnings('off')
+
 #Transfrom a list of variable name denoted selection results to 0-1 matrix result
 f01<-function(object){
 
@@ -308,6 +310,19 @@ BOOT.MODI.LASSO <- function(x, dep.var.index, r, lmbd,seed){
   return(var_lasso)
 }
 
+BOOT.MODI.ELASTIC <- function(x, dep.var.index, r, lmbd,seed){
+  var_lasso<-vector(mode="list",length=r)
+  set.seed(seed=seed)
+  for (i in 1:r){
+    ind=sample(1:nrow(x),nrow(x),replace=T)
+    boot.data<-x[ind,]
+    opt.lambda<-cv.glmnet(x=as.matrix(boot.data[,-dep.var.index]),y=boot.data[,dep.var.index],alpha=1)$lambda.min
+    elastic.fit<-glmnet(x=as.matrix(boot.data[,-dep.var.index]),y=boot.data[,dep.var.index],family='gaussian',alpha=0.5)
+    beta<-coef(elastic.fit,s=opt.lambda)[,1][which(abs(coef(elastic.fit,s=opt.lambda)[,1]) > lmbd)]
+    var_lasso[[i]]<-full.var[full.var%in%names(beta)[beta!=0]]
+  }
+  return(var_lasso)
+}
 
 #Calculate the Model confidences bounds and their corresponding freq rate
 CI<-function(var.list,var.matrix,p)
@@ -702,6 +717,7 @@ mcb.compare <- function(x, y, B=200, lambdas=NA, methods = NA, level=0.95,seed=1
   #r bootstrap次数
   #methods 变量选择方法,methods = c('adalasso', 'lasso', 'SCAD', 'MCP','stepwise','LAD','SQRT'),默认为所有
   #lmbd 只寻找最近的lmbd
+  warnings('off')
 
   x = as.data.frame(x)
   n = length(x)
@@ -727,7 +743,7 @@ mcb.compare <- function(x, y, B=200, lambdas=NA, methods = NA, level=0.95,seed=1
     lambdas = ''
   }
   if(methods == '.'){
-    methods <- c('aLasso', 'Lasso', 'SCAD', 'MCP','stepwise','LAD','SQRT')
+    methods <- c('aLasso', 'Lasso','Elastic', 'SCAD', 'MCP','stepwise','LAD','SQRT')
   }
 
   mcbfit = list()
@@ -757,6 +773,19 @@ mcb.compare <- function(x, y, B=200, lambdas=NA, methods = NA, level=0.95,seed=1
     result_Lasso <- CI(var_lasso, var_01_lasso, p)
     mcbfit$Lasso<-getmcb(result_Lasso,c=level)
     mcbframe$Lasso<-getmcbt(result_Lasso)
+  }
+
+  #Elastic
+  if('Elastic' %in% methods){
+    if(lambdas == ''){
+      var_elastic <- BOOT.MODI.ELASTIC(data, p + 1, r, lmbd=0.05,seed=seed)
+    }else{
+      var_elastic <- BOOT.MODI.ELASTIC(data, p + 1, r, lmbd=lambdas[which(methods=='Lasso')],seed=seed)
+    }
+    var_01_elastic<-f01(var_elastic)
+    result_Elastic <- CI(var_elastic, var_01_elastic, p)
+    mcbfit$Elastic<-getmcb(result_Elastic,c=level)
+    mcbframe$Elastic<-getmcbt(result_Elastic)
   }
 
   #SCAD与MCP的lmbd默认都是找最小
@@ -863,6 +892,7 @@ mcb <- function(x, y, B=200, lambda=NA, method = 'Lasso', level=0.95, seed = 122
   #methods 变量选择方法,methods = c('adalasso', 'lasso', 'SCAD', 'MCP','stepwise','LAD','SQRT'),默认为所有
   #lmbd 只寻找最近的lmbd
   #数据变换
+  warnings('off')
 
   x = as.data.frame(x)
   n = length(x)
@@ -903,6 +933,17 @@ mcb <- function(x, y, B=200, lambda=NA, method = 'Lasso', level=0.95, seed = 122
     }
     var_01_lasso<-f01(var_lasso)
     result <- CI(var_lasso, var_01_lasso, p)
+  }
+
+  #Elastic
+  if(method == 'Elastic'){
+    if(lambda == ''){
+      var_elastic <- BOOT.MODI.ELASTIC(data, p + 1, r, lmbd=0.05,seed=seed)
+    }else{
+      var_elastic <- BOOT.MODI.ELASTIC(data, p + 1, r, lmbd=lambda,seed=seed)
+    }
+    var_01_elastic<-f01(var_elastic)
+    result <- CI(var_elastic, var_01_elastic, p)
   }
 
   #SCAD与MCP的lmbd默认都是找最小
