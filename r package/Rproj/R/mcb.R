@@ -335,7 +335,8 @@ CI<-function(var.list,var.matrix,p)
   upper<-vector(mode="list",length=p+1)
   for(i in 0:p)
   {
-    cap<-vector(length=p+1);cap[1]<-0
+    cap<-vector(length=p+1)
+    cap[1]<-0
     for(j in 0:(p-i))
     {
       if (j==0 & i!=0)
@@ -375,6 +376,57 @@ CI<-function(var.list,var.matrix,p)
     }else{
       lower[[i+1]]<-full.var[order[1:(maxlocation-1)]]
       upper[[i+1]]<-full.var[order[1:(maxlocation-1+i)]]
+    }
+  }
+  result<-list(freq=freq,lower=lower,upper=upper)
+  return(result)
+}
+
+# FULL MODEL - CI
+CI.Ufull <- function(var.list,var.matrix,p)
+{
+  full.var<-colnames(var.matrix)
+  colsum<-apply(var.matrix,2,sum)
+  order<-order(colsum,decreasing = T)
+  freq<-vector(length=p+1);freq[1]<-0
+  lower<-vector(mode="list",length=p+1)
+  upper<-vector(mode="list",length=p+1)
+  for(i in 0:p)
+  {
+    cap<-vector(length=p+1)
+    cap[1]<-0
+    j <- p - i
+    if (j==0 & i!=0){
+      uppertest<-full.var[order[1:p]]
+      for(r in 1:length(var.list)){
+        if(all(var.list[[r]]%in%uppertest)) cap[j+1]<-cap[j+1]+1
+      }
+    }else{
+      if(j!=0){
+        lowtest<-full.var[order[1:j]]
+        uppertest<-full.var[order[1:p]]
+        for(r in 1:length(var.list))
+        {
+          if(all(all(lowtest%in%var.list[[r]]),all(var.list[[r]]%in%uppertest))) cap[j+1]<-cap[j+1]+1
+        }
+      }
+      if (j == 0){
+        for (r in 1:length(var.list)){
+          if (identical(var.list[[r]],character(0))) cap[j+1] <- cap[j+1] + 1
+        }
+      }
+    }
+    freq[i+1]<-max(cap)/r
+
+    if (i == 0){
+      lower[[i+1]]<-full.var[order[1:p]]
+      upper[[i+1]]<-full.var[order[1:p]]
+    }else if(i == p){
+      lower[[i+1]]<-""
+      upper[[i+1]]<-full.var[order[1:p]]
+    }else{
+      lower[[i+1]]<-full.var[order[1:(p-i)]]
+      upper[[i+1]]<-full.var[order[1:p]]
     }
   }
   result<-list(freq=freq,lower=lower,upper=upper)
@@ -710,7 +762,7 @@ getmcbt <- function(result){
 
 # 主函数
 
-mcb.compare <- function(x, y, B=200, lambdas=NA, methods = NA, level=0.95,seed=122){
+mcb.compare <- function(x, y, B=200, lambdas=NULL, methods = NULL, level=0.95,seed=122, ufull=FALSE){
   #var.x 传入可供选择的变量,var.x = c("var1","var2".....)
   #pred.y 被预测变量y
   #data 数据集
@@ -736,13 +788,11 @@ mcb.compare <- function(x, y, B=200, lambdas=NA, methods = NA, level=0.95,seed=1
 
   final_result = ''
 
-  if(is.na(methods)){
-    methods = '.'
-  }
-  if(is.na(lambdas)){
+  if(is.null(lambdas)){
     lambdas = ''
   }
-  if(methods == '.'){
+
+  if(is.null(methods)){
     methods <- c('aLasso', 'Lasso','Elastic', 'SCAD', 'MCP','stepwise','LAD','SQRT')
   }
 
@@ -757,7 +807,11 @@ mcb.compare <- function(x, y, B=200, lambdas=NA, methods = NA, level=0.95,seed=1
       var_adaptivelasso <- RES.BOOT.CI2(data, p + 1, r,lmbd=lambdas[which(methods=='adaptiveLasso')],seed=seed)
     }
     var_01_ada_lasso<-f01(var_adaptivelasso)
-    result_aLasso <- CI(var_adaptivelasso, var_01_ada_lasso, p)
+    if(ufull){
+      result_aLasso <- CI.Ufull(var_adaptivelasso, var_01_ada_lasso, p)
+    }else{
+      result_aLasso <- CI(var_adaptivelasso, var_01_ada_lasso, p)
+    }
     mcbfit$aLasso <- getmcb(result_aLasso,c=level)
     mcbframe$aLasso <- getmcbt(result_aLasso)
   }
@@ -770,7 +824,11 @@ mcb.compare <- function(x, y, B=200, lambdas=NA, methods = NA, level=0.95,seed=1
       var_lasso <- BOOT.MODI.LASSO(data, p + 1, r, lmbd=lambdas[which(methods=='Lasso')],seed=seed)
     }
     var_01_lasso<-f01(var_lasso)
-    result_Lasso <- CI(var_lasso, var_01_lasso, p)
+    if(ufull){
+      result_Lasso <- CI.Ufull(var_lasso, var_01_lasso, p)
+    }else{
+      result_Lasso <- CI(var_lasso, var_01_lasso, p)
+    }
     mcbfit$Lasso<-getmcb(result_Lasso,c=level)
     mcbframe$Lasso<-getmcbt(result_Lasso)
   }
@@ -783,7 +841,11 @@ mcb.compare <- function(x, y, B=200, lambdas=NA, methods = NA, level=0.95,seed=1
       var_elastic <- BOOT.MODI.ELASTIC(data, p + 1, r, lmbd=lambdas[which(methods=='Lasso')],seed=seed)
     }
     var_01_elastic<-f01(var_elastic)
-    result_Elastic <- CI(var_elastic, var_01_elastic, p)
+    if(ufull){
+      result_Elastic <- CI.Ufull(var_elastic, var_01_elastic, p)
+    }else{
+      result_Elastic <- CI(var_elastic, var_01_elastic, p)
+    }
     mcbfit$Elastic<-getmcb(result_Elastic,c=level)
     mcbframe$Elastic<-getmcbt(result_Elastic)
   }
@@ -797,7 +859,11 @@ mcb.compare <- function(x, y, B=200, lambdas=NA, methods = NA, level=0.95,seed=1
       var_SCAD <- RES.BOOT.CI3(data, p + 1, r, pnlt='SCAD',lmbd=lambdas[which(methods=='SCAD')],seed=seed)
     }
     var_01_SCAD<-f01(var_SCAD)
-    result_SCAD <- CI(var_SCAD, var_01_SCAD, p)
+    if(ufull){
+      result_SCAD <- CI.Ufull(var_SCAD, var_01_SCAD, p)
+    }else{
+      result_SCAD <- CI(var_SCAD, var_01_SCAD, p)
+    }
     mcbfit$SCAD <- getmcb(result_SCAD,c=level)
     mcbframe$SCAD <- getmcbt(result_SCAD)
   }
@@ -810,7 +876,11 @@ mcb.compare <- function(x, y, B=200, lambdas=NA, methods = NA, level=0.95,seed=1
       var_MCP <- RES.BOOT.CI3(data, p + 1, r, pnlt='MCP',lmbd=lambdas[which(methods=='MCP')],seed=seed)
     }
     var_01_MCP<-f01(var_MCP)
-    result_MCP <- CI(var_MCP, var_01_MCP, p)
+    if(ufull){
+      result_MCP <- CI.Ufull(var_MCP, var_01_MCP, p)
+    }else{
+      result_MCP <- CI(var_MCP, var_01_MCP, p)
+    }
     mcbfit$MCP <- getmcb(result_MCP,c=level)
     mcbframe$MCP <- getmcbt(result_MCP)
   }
@@ -824,7 +894,11 @@ mcb.compare <- function(x, y, B=200, lambdas=NA, methods = NA, level=0.95,seed=1
       var_stepwise <- RES.BOOT.CI5(data, p, r,lmbd=lambdas[which(methods=='stepwise')],seed=seed)
     }
     var_01_stepwise <- f01(var_stepwise)
-    result_stepwise <- CI(var_stepwise, var_01_stepwise, p)
+    if(ufull){
+      result_stepwise <- CI.Ufull(var_stepwise, var_01_stepwise, p)
+    }else{
+      result_stepwise <- CI(var_stepwise, var_01_stepwise, p)
+    }
     mcbfit$stepwise <- getmcb(result_stepwise,c=level)
     mcbframe$stepwise <- getmcbt(result_stepwise)
   }
@@ -838,7 +912,11 @@ mcb.compare <- function(x, y, B=200, lambdas=NA, methods = NA, level=0.95,seed=1
       var_LAD <- RES.BOOT.CI4(data, p+1, r, q = 1, lmbd = lambdas[which(methods=='LAD')],seed=seed)
     }
     var_01_LAD <- f01(var_LAD)
-    result_LAD <- CI(var_LAD, var_01_LAD, p)
+    if(ufull){
+      result_LAD <- CI.Ufull(var_LAD, var_01_LAD, p)
+    }else{
+      result_LAD <- CI(var_LAD, var_01_LAD, p)
+    }
     mcbfit$LAD <- getmcb(result_LAD,c=level)
     mcbframe$LAD <- getmcbt(result_LAD)
   }
@@ -852,7 +930,11 @@ mcb.compare <- function(x, y, B=200, lambdas=NA, methods = NA, level=0.95,seed=1
       var_SQRT <- RES.BOOT.CI4(data, p+1, r, q = 2, lmbd = lambdas[which(methods=='SQRT')],seed=seed)
     }
     var_01_SQRT <- f01(var_SQRT)
-    result_SQRT <- CI(var_SQRT, var_01_SQRT, p)
+    if(ufull){
+      result_SQRT <- CI.Ufull(var_SQRT, var_01_SQRT, p)
+    }else{
+      result_SQRT <- CI(var_SQRT, var_01_SQRT, p)
+    }
     mcbfit$SQRT <- getmcb(result_SQRT,c=level)
     mcbframe$SQRT <- getmcbt(result_SQRT)
   }
@@ -868,14 +950,6 @@ mcb.compare <- function(x, y, B=200, lambdas=NA, methods = NA, level=0.95,seed=1
 
   all_result = list()
 
-  #ggplot2绘图
-  df <- data.frame(final_result)
-  df$x <- seq(0,1,length.out = n+1)
-  df$x <- round(df$x,digits = 3)
-  df <- melt(df, id=c('x'))
-  df$value <- as.numeric(df$value)
-  muc <- ggplot(df, aes(x=x, y=value, color=variable, shape=variable)) + geom_line() + labs(x = "w/p") + labs(y = "freq") + labs(colour = "Method") + ylim(0,1) + scale_x_continuous(breaks = df$x)
-  all_result$mucplot <- muc
   all_result$mcb <- mcbfit
   all_result$mcbframe <- mcbframe
 
@@ -884,7 +958,7 @@ mcb.compare <- function(x, y, B=200, lambdas=NA, methods = NA, level=0.95,seed=1
 
 
 ####修改完成
-mcb <- function(x, y, B=200, lambda=NA, method = 'Lasso', level=0.95, seed = 122){
+mcb <- function(x, y, B=200, lambda=NULL, method = 'Lasso', level=0.95, seed = 122,ufull=FALSE){
   #var.x 传入可供选择的变量,var.x = c("var1","var2".....)
   #pred.y 被预测变量y
   #data 数据集
@@ -909,7 +983,7 @@ mcb <- function(x, y, B=200, lambda=NA, method = 'Lasso', level=0.95, seed = 122
   p <<- dim(data)[2]-1
   r = B
 
-  if(is.na(lambda)){
+  if(is.null(lambda)){
     lambda = ''
   }
 
@@ -921,7 +995,11 @@ mcb <- function(x, y, B=200, lambda=NA, method = 'Lasso', level=0.95, seed = 122
       var_adaptivelasso <- RES.BOOT.CI2(data, p + 1, r,lmbd=lambda,seed=seed)
     }
     var_01_ada_lasso<-f01(var_adaptivelasso)
-    result <- CI(var_adaptivelasso, var_01_ada_lasso, p)
+    if(ufull){
+      result <- CI.Ufull(var_adaptivelasso, var_01_ada_lasso, p)
+    }else{
+      result <- CI(var_adaptivelasso, var_01_ada_lasso, p)
+    }
   }
 
   #lasso
@@ -932,7 +1010,11 @@ mcb <- function(x, y, B=200, lambda=NA, method = 'Lasso', level=0.95, seed = 122
       var_lasso <- BOOT.MODI.LASSO(data, p + 1, r, lmbd=lambda,seed=seed)
     }
     var_01_lasso<-f01(var_lasso)
-    result <- CI(var_lasso, var_01_lasso, p)
+    if(ufull){
+      result <- CI.Ufull(var_lasso, var_01_lasso, p)
+    }else{
+      result <- CI(var_lasso, var_01_lasso, p)
+    }
   }
 
   #Elastic
@@ -943,7 +1025,11 @@ mcb <- function(x, y, B=200, lambda=NA, method = 'Lasso', level=0.95, seed = 122
       var_elastic <- BOOT.MODI.ELASTIC(data, p + 1, r, lmbd=lambda,seed=seed)
     }
     var_01_elastic<-f01(var_elastic)
-    result <- CI(var_elastic, var_01_elastic, p)
+    if(ufull){
+      result <- CI.Ufull(var_elastic, var_01_elastic, p)
+    }else{
+      result <- CI(var_elastic, var_01_elastic, p)
+    }
   }
 
   #SCAD与MCP的lmbd默认都是找最小
@@ -951,14 +1037,23 @@ mcb <- function(x, y, B=200, lambda=NA, method = 'Lasso', level=0.95, seed = 122
   if(method == 'SCAD'){
     var_SCAD <- RES.BOOT.CI3(data, p + 1, r, pnlt='SCAD',lmbd=lambda,seed=seed)
     var_01_SCAD<-f01(var_SCAD)
-    result <- CI(var_SCAD, var_01_SCAD, p)
+    if(ufull){
+      result <- CI.Ufull(var_SCAD, var_01_SCAD, p)
+    }else{
+      result <- CI(var_SCAD, var_01_SCAD, p)
+    }
   }
 
   #MCP
   if(method=='MCP'){
     var_MCP <- RES.BOOT.CI3(data, p + 1, r, pnlt='MCP',lmbd=lambda,seed=seed)
     var_01_MCP<-f01(var_MCP)
-    result <- CI(var_MCP, var_01_MCP, p)
+    if(ufull){
+      result <- CI.Ufull(var_MCP, var_01_MCP, p)
+    }
+    else{
+      result <- CI(var_MCP, var_01_MCP, p)
+    }
   }
 
   #lmbd默认最小
@@ -966,7 +1061,11 @@ mcb <- function(x, y, B=200, lambda=NA, method = 'Lasso', level=0.95, seed = 122
   if(method=='stepwise'){
     var_stepwise <- RES.BOOT.CI5(data, p, r,lmbd=lambda,seed=seed)
     var_01_stepwise <- f01(var_stepwise)
-    result <- CI(var_stepwise, var_01_stepwise, p)
+    if(ufull){
+      result <- CI.Ufull(var_stepwise, var_01_stepwise, p)
+    }else{
+      result <- CI(var_stepwise, var_01_stepwise, p)
+    }
   }
 
   #LAD与SQRT的lmbd默认为最接近1
@@ -974,7 +1073,11 @@ mcb <- function(x, y, B=200, lambda=NA, method = 'Lasso', level=0.95, seed = 122
   if(method=='LAD'){
     var_LAD <- RES.BOOT.CI4(data, p+1, r, q = 1, lmbd = lambda,seed=seed)
     var_01_LAD <- f01(var_LAD)
-    result <- CI(var_LAD, var_01_LAD, p)
+    if(ufull){
+      result <- CI.Ufull(var_LAD, var_01_LAD, p)
+    }else{
+      result <- CI(var_LAD, var_01_LAD, p)
+    }
   }
 
 
@@ -982,18 +1085,14 @@ mcb <- function(x, y, B=200, lambda=NA, method = 'Lasso', level=0.95, seed = 122
   if(method=='SQRT'){
     var_SQRT <- RES.BOOT.CI4(data, p+1, r, q = 2, lmbd = lambda,seed=seed)
     var_01_SQRT <- f01(var_SQRT)
-    result <- CI(var_SQRT, var_01_SQRT, p)
+    if(ufull){
+      result <- CI.Ufull(var_SQRT, var_01_SQRT, p)
+    }else{
+      result <- CI(var_SQRT, var_01_SQRT, p)
+    }
   }
 
   all_result <- list()
-
-  #ggplot2绘图
-  df <- data.frame(result$freq)
-  # df$x <- c(0,0.2,0.4,0.6,0.8,1.0)
-  df$x <- seq(0,1,length.out = n+1)
-  df$x <- round(df$x,digits = 3)
-  muc <- ggplot(df, aes(x=x, y=result.freq)) + geom_line() + labs(x = "w/p") + labs(y = "freq") + labs(colour = "Method") + ylim(0,1) + scale_x_continuous(breaks = df$x)
-  all_result$mucplot <- muc
 
   fit_freq = c(result$freq)[result$freq - level >= 0]
   best_fit = which.min(fit_freq - level) + n+1 - sum(result$freq - level >= 0)
@@ -1011,4 +1110,56 @@ mcb <- function(x, y, B=200, lambda=NA, method = 'Lasso', level=0.95, seed = 122
   return(all_result)
 }
 
+mucplot <- function(obj){
 
+  obj = obj$mcbframe
+
+  method = c()
+  width = c()
+  bcr = c()
+
+  if(is.null(obj$width)){
+    tag = 1
+  }else{
+    width = c(width, obj$width)
+    bcr = c(bcr, obj$bcr)
+    tag = 0
+  }
+
+  if(tag==1){
+    method = c()
+    width = c()
+    bcr = c()
+    for(i in 1:length(names(obj))){
+      method = c(method, rep(c(names(obj)[i]),length(obj[[1]]$width)))
+      width = c(width, obj[[i]]$width)
+      bcr = c(bcr, obj[[i]]$bcr)
+    }
+  }
+
+  if(tag==1){
+    data <- data.frame(method=method, width=width, bcr=bcr)
+    data$width <- data$width / max(data$width)
+  }else{
+    data <- data.frame(width=width, bcr=bcr)
+    data$width <- data$width / max(data$width)
+  }
+
+  if(tag==1){
+    gp <- ggplot(data, aes(width, bcr, colour = as.factor(method))) +
+      geom_line(stat = "identity") +
+      labs(x = "w/p", y = "bcr", title = "MUC") +
+      scale_colour_discrete(name = "Method") +
+      ylim(limits=c(0,1)) +
+      xlim(limits=c(0,1))
+    return(gp)
+  }else{
+    gp <- ggplot(data, aes(width, bcr)) +
+      geom_line(stat = "identity",colour="red") +
+      labs(x = "w/p", y = "bcr", title = "MUC") +
+      ylim(limits=c(0,1)) +
+      xlim(limits=c(0,1))
+    return(gp)
+  }
+
+}

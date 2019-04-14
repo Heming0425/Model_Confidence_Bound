@@ -1,1 +1,1 @@
-export(mcb,mcb.compare)
+export(mcb, mcb.compare, mucplot)
